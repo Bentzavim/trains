@@ -101,18 +101,27 @@
         // --- CONFIGURATION ---
         const DEPARTURE_STATION_CODE = "BSH"; 
         const DESTINATION_STATION_CODE = "EUS";
+        const DESTINATION_FILTER_NAME = "london euston"; // Name to filter by
         const MORNING_START_TIME = "06:00"; // Time to check from if no trains are found
         const TRAIN_COUNT = 2; // How many trains to show
         const FALLBACK_TRAIN_COUNT = 10; // How many trains to *ask for* in the fallback to find timetabled ones
         // --- END CONFIGURATION ---
 
         // --- REAL API FUNCTION (HUXLEY 2) ---
-        // Now accepts an optional options object { time, date, count }
+        // Now accepts an optional options object { time, date, count, noDestinationFilter }
         async function fetchRealTrainData(fromStation, toStation, count, options = {}) {
             
             // Use count from options if provided, otherwise default
             const queryCount = options.count || count;
-            let apiUrl = `https://huxley2.azurewebsites.net/departures/${fromStation}/to/${toStation}/${queryCount}`;
+            
+            // NEW: Build URL based on whether a destination filter is applied
+            let apiUrl = `https://huxley2.azurewebsites.net/departures/${fromStation}`;
+            if (options.noDestinationFilter) {
+                apiUrl += `/${queryCount}`; // e.g., /departures/BSH/10
+                console.log("Fetching all departures (no destination filter)");
+            } else {
+                apiUrl += `/to/${toStation}/${queryCount}`; // e.g., /departures/BSH/to/EUS/2
+            }
             
             let params = new URLSearchParams();
 
@@ -177,7 +186,7 @@
                     return {
                         id: service.serviceID,
                         scheduled: scheduled,
-                        destination: destination,
+                        destination: destination, // We filter on this later
                         operator: operator,
                         delay: delay,
                         status: status
@@ -248,7 +257,7 @@
                 fetchError = true;
             }
 
-            // --- 2. If "next" finds nothing, try full day search (e.g., .../BSH/to/EUS/10?time=06:00&date=2025-11-01) ---
+            // --- 2. If "next" finds nothing, try full day search (e.g., .../BSH/10?time=06:00&date=2025-11-01) ---
             if (!fetchError && (!trainData || trainData.length === 0)) {
                 console.warn(`No 'next' services found. Trying from ${MORNING_START_TIME}...`);
                 isForLaterToday = true; // Flag this
@@ -256,21 +265,32 @@
                 const todayStr = getTodayISO(); // Get YYYY-MM-DD for today
                 
                 try {
-                    trainListElement.innerHTML = `<div class="text-center text-xl status-later-today">No trains now. Checking from ${MORNING_START_TIME} on ${todayStr}...</div>`;
+                    trainListElement.innerHTML = `<div class="text-center text-xl status-later-today">No trains now. Checking timetable from ${MORNING_START_TIME}...</div>`;
                     
-                    // NEW: Pass options object with fallback count
-                    trainData = await fetchRealTrainData(
+                    // NEW: Fetch ALL departures from BSH, not just to EUS
+                    const allDepartures = await fetchRealTrainData(
                         DEPARTURE_STATION_CODE, 
-                        DESTINATION_STATION_CODE,
-                        TRAIN_COUNT, // This is the default count, but we override w/ options
+                        DESTINATION_STATION_CODE, // Still pass EUS, but it's ignored by function
+                        TRAIN_COUNT, 
                         { 
                             time: MORNING_START_TIME, 
                             date: todayStr,
-                            count: FALLBACK_TRAIN_COUNT // Ask for 10 to find timetabled ones
+                            count: FALLBACK_TRAIN_COUNT, // Ask for 10
+                            noDestinationFilter: true // IMPORTANT: Tell function not to use destination
                         }
                     );
+
+                    // NEW: Filter the results locally
+                    if (allDepartures && allDepartures.length > 0) {
+                        console.log(`Fetched ${allDepartures.length} departures, filtering for ${DESTINATION_FILTER_NAME}...`);
+                        trainData = allDepartures.filter(train => {
+                            return train.destination.toLowerCase().includes(DESTINATION_FILTER_NAME);
+                        });
+                        console.log(`Found ${trainData.length} trains to ${DESTINATION_FILTER_NAME}.`);
+                    }
+
                 } catch (error) {
-                     console.error("Error in fetchRealTrainData (today), will use mock data.", error);
+                     console.error("Error in fetchRealTrainData (today)", error);
                      fetchError = true; // Set fetch error for final fallback
                 }
             }
@@ -281,7 +301,7 @@
                      // This means the API call itself failed (e.g., network down)
                      trainListElement.innerHTML = '<div class="text-center text-3xl status-delayed">DATA ERROR</div><div class="text-center text-xl text-gray-400">Could not connect to server.</div>';
                  } else {
-                     // This means the API call worked, but no trains were returned
+                     // This means the API call worked, but no trains were returned OR our filter found nothing.
                      trainListElement.innerHTML = `<div class="text-center text-3xl status-later-today">NO SERVICES FOUND</div><div class="text-center text-xl text-gray-400">No services found for today.</div>`;
                  }
                  return; // Stop execution
@@ -393,4 +413,3 @@
 
 </body>
 </html>
-
