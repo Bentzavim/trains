@@ -14,16 +14,22 @@
     
     <!-- Custom styles for the retro board -->
     <style>
-        /* Apply the pixel font and retro colours */
+        /* UPDATED: Body no longer has a default color */
         body {
             font-family: 'VT323', monospace;
             background-color: #000;
-            color: #f9b200; /* Amber/Yellow */
-            text-shadow: 0 0 3px #f9b200, 0 0 1px #f9b200;
         }
 
-        /* Animation for the board flicker */
-        @keyframes flicker {
+        /* Base board style */
+        .departure-board {
+            border: 8px solid #333;
+            background-color: #0a0a0a; /* Very dark grey, not pure black */
+        }
+
+        /* --- NEW: Colour-specific board styles --- */
+
+        /* National Rail (Amber) */
+        @keyframes flicker-amber {
             0%, 100% { 
                 opacity: 1; 
                 box-shadow: 0 0 10px #f9b200;
@@ -33,15 +39,31 @@
                 box-shadow: 0 0 15px #f9b200;
             }
         }
+        .board-national-rail {
+            color: #f9b200; /* Amber/Yellow */
+            text-shadow: 0 0 3px #f9b200, 0 0 1px #f9b200;
+            animation: flicker-amber 2s infinite;
+        }
 
-        /* The main board container */
-        .departure-board {
-            border: 8px solid #333;
-            background-color: #0a0a0a; /* Very dark grey, not pure black */
-            animation: flicker 2s infinite;
-            box-shadow: 0 0 10px #f9b200; /* Add a glow to the board itself */
+        /* Jubilee (Silver) */
+        @keyframes flicker-silver {
+            0%, 100% { 
+                opacity: 1; 
+                box-shadow: 0 0 10px #A0A5A9;
+            }
+            50% { 
+                opacity: 0.98; 
+                box-shadow: 0 0 15px #A0A5A9;
+            }
+        }
+        .board-jubilee {
+            color: #A0A5A9; /* TfL Jubilee Silver */
+            text-shadow: 0 0 3px #A0A5A9, 0 0 1px #A0A5A9;
+            animation: flicker-silver 2.2s infinite; /* Slightly different speed */
         }
         
+        /* --- End new board styles --- */
+
         .header-title {
             color: #ffffff;
             text-shadow: 0 0 5px #ffffff, 0 0 2px #ffffff;
@@ -52,7 +74,7 @@
             text-shadow: 0 0 3px #eee;
         }
 
-        /* Status colours */
+        /* Status colours (universal for both boards) */
         .status-ontime { 
             color: #00ff00; /* Bright Green */
             text-shadow: 0 0 3px #00ff00;
@@ -73,28 +95,70 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="departure-board p-6 rounded-lg w-full max-w-lg">
+    <!-- Wrapper div to hold both boards -->
+    <div class="flex flex-col space-y-6">
 
-        <div class="flex justify-between items-center mb-4 border-b-4 border-gray-700 pb-2">
-            <h1 class="header-title text-4xl font-bold">
-                BUSHEY (BSH)
-            </h1>
-            <div class="text-right text-xl clock-text">
-                <span id="current-time">00:00:00</span><br>
-                <span id="last-updated" class="text-sm">Last updated: ---</span>
+        <!-- National Rail Board (Existing) -->
+        <!-- UPDATED: Added 'board-national-rail' class -->
+        <div class="departure-board board-national-rail p-6 rounded-lg w-full max-w-lg">
+
+            <div class="flex justify-between items-center mb-4 border-b-4 border-gray-700 pb-2">
+                <h1 class="header-title text-4xl font-bold">
+                    BUSHEY (BSH)
+                </h1>
+                <div class="text-right text-xl clock-text">
+                    <span id="current-time">00:00:00</span><br>
+                    <span id="last-updated" class="text-sm">Last updated: ---</span>
+                </div>
             </div>
-        </div>
-        
-        <div class="flex text-xl text-gray-400 mb-2">
-            <span class="w-1/4">Time</span>
-            <span class="w-1/2">Destination</span>
-            <span class="w-1/4 text-right">Status</span>
+            
+            <div class="flex text-xl text-gray-400 mb-2">
+                <span class="w-1/4">Time</span>
+                <span class="w-1/2">Destination</span>
+                <span class="w-1/4 text-right">Status</span>
+            </div>
+
+            <div id="train-list" class="space-y-3">
+                <!-- Train cards will be dynamically inserted here by JavaScript -->
+            </div>
+
         </div>
 
-        <div id="train-list" class="space-y-3">
-            <!-- Train cards will be dynamically inserted here by JavaScript -->
-        </div>
+        <!-- NEW: TfL Jubilee Line Board -->
+        <!-- UPDATED: Added 'board-jubilee' class -->
+        <div class="departure-board board-jubilee p-6 rounded-lg w-full max-w-lg">
 
+            <div class="flex justify-between items-center mb-4 border-b-4 border-gray-700 pb-2">
+                <!-- REMOVED: jubilee-line class, it's now on the parent -->
+                <h1 class="header-title text-4xl font-bold">
+                    JUBILEE LINE
+                </h1>
+                <div class="text-right text-xl clock-text">
+                    <span class="text-2xl">STANMORE</span><br>
+                    <span id="tfl-last-updated" class="text-sm">Last updated: ---</span>
+                </div>
+            </div>
+            
+            <!-- Line Status -->
+            <div class="flex justify-between items-center mb-4 text-2xl">
+                <span class="text-gray-400">Line Status:</span>
+                <span id="tfl-line-status" class="status-ontime">Updating...</span>
+            </div>
+
+            <!-- Departures Header -->
+            <div class="flex text-xl text-gray-400 mb-2">
+                <span class="w-1/4">Platform</span>
+                <span class="w-1/2">Destination</span>
+                <span class="w-1/4 text-right">Due</span>
+            </div>
+            
+            <!-- Departures List -->
+            <div id="tfl-departures" class="space-y-3 text-3xl">
+                <!-- TfL departures will be inserted here -->
+            </div>
+
+        </div>
+    
     </div>
 
     <script>
@@ -105,6 +169,11 @@
         const MORNING_START_TIME = "06:00"; // Time to check from if no trains are found
         const TRAIN_COUNT = 2; // How many trains to show
         const FALLBACK_TRAIN_COUNT = 10; // How many trains to *ask for* in the fallback to find timetabled ones
+        
+        // NEW: TfL Configuration
+        const TFL_LINE_ID = "jubilee";
+        const TFL_STATION_ID = "940GZZLUSTM"; // Naptan ID for Stanmore
+        const TFL_APP_KEY = "72864cfac02b490ea19f0b70053c44c7"; // Pasted your key
         // --- END CONFIGURATION ---
 
         // --- REAL API FUNCTION (HUXLEY 2) ---
@@ -199,6 +268,86 @@
                 throw error; 
             }
         }
+        
+        // --- NEW: TFL API FUNCTION (SIMULATED) ---
+        // This is no longer used, we call fetchRealTflData
+        async function fetchTflData(lineId, stationId) {
+            // This is MOCK data because the real TfL API requires an API key.
+            // If you get a key, you can swap this function with the real one below.
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const mockData = {
+                        lineStatus: "Good Service",
+                        departures: [
+                            { destination: "Stratford", secondsUntil: 120, platform: "2" },
+                            { destination: "Stratford", secondsUntil: 300, platform: "3" },
+                        ]
+                    };
+                    console.log("Using MOCK TfL Data:", mockData);
+                    resolve(mockData);
+                }, 500); // Simulate network delay
+            });
+        }
+
+        
+        // --- NEW: REAL TFL API FUNCTION ---
+        // This is now active
+        async function fetchRealTflData(lineId, stationId) {
+            // Use a CORS proxy to bypass browser security
+            const proxy = "https://corsproxy.io/?";
+            const lineStatusUrl = `${proxy}https://api.tfl.gov.uk/Line/${lineId}/Status?app_key=${TFL_APP_KEY}`;
+            const arrivalsUrl = `${proxy}https://api.tfl.gov.uk/StopPoint/${stationId}/Arrivals?app_key=${TFL_APP_KEY}`;
+
+            try {
+                // Fetch line status and arrivals in parallel
+                const [statusResponse, arrivalsResponse] = await Promise.all([
+                    fetch(lineStatusUrl),
+                    fetch(arrivalsUrl)
+                ]);
+
+                if (!statusResponse.ok) throw new Error("Failed to fetch TfL line status");
+                if (!arrivalsResponse.ok) throw new Error("Failed to fetch TfL arrivals");
+
+                const statusData = await statusResponse.json();
+                const arrivalsData = await arrivalsResponse.json();
+                
+                console.log("TfL Status:", statusData);
+                console.log("TfL Arrivals:", arrivalsData);
+
+                // Process Line Status
+                const lineStatus = statusData[0]?.lineStatuses[0]?.statusSeverityDescription || "Unknown";
+
+                // Process Arrivals
+                // Sort by time to arrival and take the first 2
+                const departures = arrivalsData
+                    .sort((a, b) => a.timeToStation - b.timeToStation)
+                    .slice(0, 1) // UPDATED: Show 1, not 2
+                    .map(arr => {
+                        // Smarter destination logic
+                        let dest = arr.destinationName || "Unknown";
+                        if (dest.toLowerCase().includes("stanmore")) {
+                            dest = "Check Front"; // Use fallback
+                        }
+                        
+                        // Get platform name and clean it
+                        let platform = arr.platformName || "---";
+                        platform = platform.replace("Platform ", "").replace(/Southbound/gi, "").trim(); // Removed "Southbound"
+
+                        return {
+                            destination: dest,
+                            secondsUntil: Math.floor(arr.timeToStation), // Keep raw seconds
+                            platform: platform
+                        };
+                    });
+                
+                return { lineStatus, departures };
+
+            } catch (error) {
+                console.error("Failed to fetch REAL TfL data:", error);
+                throw error;
+            }
+        }
+        
 
 
         // --- UTILITY FUNCTIONS ---
@@ -235,8 +384,14 @@
         const currentTimeElement = document.getElementById('current-time');
         const lastUpdatedElement = document.getElementById('last-updated');
 
+        // NEW: TfL DOM Elements
+        const tflLastUpdatedElement = document.getElementById('tfl-last-updated');
+        const tflLineStatusElement = document.getElementById('tfl-line-status');
+        const tflDeparturesElement = document.getElementById('tfl-departures');
+
         async function updateDepartureBoard() {
             const now = new Date();
+            // Update National Rail clock
             currentTimeElement.textContent = formatTime(now);
             lastUpdatedElement.textContent = `Last updated: ${formatTime(now)}`;
             
@@ -305,110 +460,172 @@
                      // This means the API call worked, but no trains were returned OR our filter found nothing.
                      trainListElement.innerHTML = `<div class="text-center text-3xl status-later-today">NO SERVICES FOUND</div><div class="text-center text-xl text-gray-400">No services found for today.</div>`;
                  }
-                 return; // Stop execution
-            }
-
-            // We only want the first TRAIN_COUNT trains, even if we fetched 10
-            const limitedData = trainData.slice(0, TRAIN_COUNT);
-            
-            // Clear the list (but keep "later today" header if it exists)
-            if (isForLaterToday) {
-                trainListElement.innerHTML = `<div class="text-center text-2xl status-later-today mb-2">First trains from ${MORNING_START_TIME}</div>`;
+                 //return; // Stop execution - DO NOT RETURN, let it render empty
             } else {
-                trainListElement.innerHTML = '';
-            }
 
-            if (limitedData.length === 0) {
-                 trainListElement.innerHTML += `<div class="text-center text-xl">No departures found.</div>`;
-                 return;
-            }
-            
-            // Loop over limitedData
-            limitedData.forEach(train => {
-                const scheduledTime = parseTimeString(train.scheduled);
+                // We only want the first TRAIN_COUNT trains, even if we fetched 10
+                const limitedData = trainData.slice(0, TRAIN_COUNT);
                 
-                let statusText = train.status;
-                let statusColor = "status-ontime";
-                let timeUntilText = ""; 
-                
-                // --- UPDATED: Logic for today vs later today ---
+                // Clear the list (but keep "later today" header if it exists)
                 if (isForLaterToday) {
-                    // If we are showing trains for later, just show status
-                    timeUntilText = "Later Today"; 
-                    if (train.status === "Cancelled") {
-                        statusColor = "status-cancelled";
-                    }
+                    trainListElement.innerHTML = `<div class="text-center text-2xl status-later-today mb-2">First trains from ${MORNING_START_TIME}</div>`;
                 } else {
-                    // Original logic for "minutes until"
-                    let minutesUntil = 0; 
-                    if (train.status === "On time") {
-                        minutesUntil = getMinutesDifference(scheduledTime, now);
-                    } else if (train.status === "Cancelled") {
-                        statusColor = "status-cancelled";
-                        minutesUntil = -999;
-                    } else if (train.delay > 0) {
-                        const actualDepartureTime = new Date(scheduledTime.getTime() + train.delay * 60000);
-                        minutesUntil = getMinutesDifference(actualDepartureTime, now);
-                        statusText = `Delayed ${train.delay} min`;
-                        statusColor = "status-delayed";
-                    } else {
-                        statusText = "Delayed";
-                        statusColor = "status-delayed";
-                        minutesUntil = getMinutesDifference(scheduledTime, now);
-                    }
+                    trainListElement.innerHTML = '';
+                }
 
-                    timeUntilText = `In ${minutesUntil} mins`;
-                    if (minutesUntil <= 0 && train.status !== "Cancelled") {
-                         // Catch trains that are due or just departed
-                        if (minutesUntil > -10) {
-                           timeUntilText = "Departed";
-                           statusText = "---";
-                           statusColor = "text-gray-500";
-                        } else {
-                           timeUntilText = "Departed";
+                if (limitedData.length === 0) {
+                    trainListElement.innerHTML += `<div class="text-center text-xl">No departures found.</div>`;
+                    //return; // DO NOT RETURN
+                }
+                
+                // Loop over limitedData
+                limitedData.forEach(train => {
+                    const scheduledTime = parseTimeString(train.scheduled);
+                    
+                    let statusText = train.status;
+                    let statusColor = "status-ontime";
+                    let timeUntilText = ""; 
+                    
+                    // --- UPDATED: Logic for today vs later today ---
+                    if (isForLaterToday) {
+                        // If we are showing trains for later, just show status
+                        timeUntilText = "Later Today"; 
+                        if (train.status === "Cancelled") {
+                            statusColor = "status-cancelled";
                         }
-                    } else if (train.status === "Cancelled") {
-                        timeUntilText = "---";
+                    } else {
+                        // Original logic for "minutes until"
+                        let minutesUntil = 0; 
+                        if (train.status === "On time") {
+                            minutesUntil = getMinutesDifference(scheduledTime, now);
+                        } else if (train.status === "Cancelled") {
+                            statusColor = "status-cancelled";
+                            minutesUntil = -999;
+                        } else if (train.delay > 0) {
+                            const actualDepartureTime = new Date(scheduledTime.getTime() + train.delay * 60000);
+                            minutesUntil = getMinutesDifference(actualDepartureTime, now);
+                            statusText = `Delayed ${train.delay} min`;
+                            statusColor = "status-delayed";
+                        } else {
+                            statusText = "Delayed";
+                            statusColor = "status-delayed";
+                            minutesUntil = getMinutesDifference(scheduledTime, now);
+                        }
+
+                        timeUntilText = `In ${minutesUntil} mins`;
+                        if (minutesUntil <= 0 && train.status !== "Cancelled") {
+                            // Catch trains that are due or just departed
+                            if (minutesUntil > -10) {
+                            timeUntilText = "Departed";
+                            statusText = "---";
+                            statusColor = "text-gray-500";
+                            } else {
+                            timeUntilText = "Departed";
+                            }
+                        } else if (train.status === "Cancelled") {
+                            timeUntilText = "---";
+                        }
+                        
+                        // Special case for "Due"
+                        if (minutesUntil > 0 && minutesUntil <= 1) {
+                            timeUntilText = "Due";
+                        }
                     }
                     
-                    // Special case for "Due"
-                    if (minutesUntil > 0 && minutesUntil <= 1) {
-                        timeUntilText = "Due";
+                    const row = document.createElement('div');
+                    row.className = "mb-3"; 
+                    
+                    row.innerHTML = `
+                        <!-- Main line -->
+                        <div class="flex text-3xl">
+                            <span class="w-1/4">${train.scheduled}</span>
+                            <span class="w-1/2">${train.destination}</span>
+                            <span class="w-1/4 text-right ${statusColor}">${statusText}</span>
+                        </div>
+                        <!-- Sub line -->
+                        <div class="flex text-xl text-gray-400 pb-2 border-b-2 border-gray-800 border-dashed">
+                            <span class="w-1/4">&nbsp;</span> <!-- Spacer -->
+                            <span class="w-1/2">${train.operator}</span>
+                            <span class="w-1/4 text-right">${timeUntilText}</span>
+                        </div>
+                    `;
+                    
+                    // Only show if it's for later today OR hasn't long departed today
+                    if (isForLaterToday || getMinutesDifference(scheduledTime, now) > -10) {
+                        trainListElement.appendChild(row);
                     }
+                });
+            }
+        }
+        
+        // --- NEW: TFL UPDATE FUNCTION ---
+        async function updateTflBoard() {
+            const now = new Date();
+            tflLastUpdatedElement.textContent = `Last updated: ${formatTime(now)}`;
+            tflDeparturesElement.innerHTML = '<div class="text-center text-xl">Updating...</div>';
+
+            try {
+                // UPDATED: Switched to the real function
+                const tflData = await fetchRealTflData(TFL_LINE_ID, TFL_STATION_ID);
+
+                // 1. Update Line Status
+                tflLineStatusElement.textContent = tflData.lineStatus;
+                if (tflData.lineStatus.toLowerCase() === "good service") {
+                    tflLineStatusElement.className = "status-ontime";
+                } else {
+                    tflLineStatusElement.className = "status-delayed"; // Or other status
                 }
                 
-                const row = document.createElement('div');
-                row.className = "mb-3"; 
-                
-                row.innerHTML = `
-                    <!-- Main line -->
-                    <div class="flex text-3xl">
-                        <span class="w-1/4">${train.scheduled}</span>
-                        <span class="w-1/2">${train.destination}</span>
-                        <span class="w-1/4 text-right ${statusColor}">${statusText}</span>
-                    </div>
-                    <!-- Sub line -->
-                    <div class="flex text-xl text-gray-400 pb-2 border-b-2 border-gray-800 border-dashed">
-                        <span class="w-1/4">&nbsp;</span> <!-- Spacer -->
-                        <span class="w-1/2">${train.operator}</span>
-                        <span class="w-1/4 text-right">${timeUntilText}</span>
-                    </div>
-                `;
-                
-                // Only show if it's for later today OR hasn't long departed today
-                if (isForLaterToday || getMinutesDifference(scheduledTime, now) > -10) {
-                    trainListElement.appendChild(row);
+                // 2. Update Departures
+                tflDeparturesElement.innerHTML = ''; // Clear "Updating..."
+                if (tflData.departures && tflData.departures.length > 0) {
+                    tflData.departures.forEach(train => {
+                        const row = document.createElement('div');
+                        row.className = "flex pb-2 border-b-2 border-gray-800 border-dashed";
+                        
+                        // UPDATED: Show seconds, no "due" logic
+                        let dueText = `${train.secondsUntil} sec`;
+
+                        row.innerHTML = `
+                            <span class="w-1/4">${train.platform}</span>
+                            <span class="w-1/2">${train.destination}</span>
+                            <span class="w-1/4 text-right status-ontime">${dueText}</span>
+                        `;
+                        tflDeparturesElement.appendChild(row);
+                    });
+                } else {
+                    tflDeparturesElement.innerHTML = '<div class="text-center text-xl">No departures found.</div>';
                 }
-            });
+
+            } catch (error) {
+                console.error("Error updating TfL board:", error);
+                tflLineStatusElement.textContent = "Data Error";
+                tflLineStatusElement.className = "status-delayed";
+                tflDeparturesElement.innerHTML = '<div class="text-center text-xl status-delayed">Could not load data.</div>';
+            }
         }
 
         // --- INITIALIZE APP ---
-        updateDepartureBoard();
-        setInterval(updateDepartureBoard, 30000); // Check every 30 seconds
-        setInterval(() => {
-            // THIS IS THE FIX: new Date()
+        function startClocks() {
+             // Update main clock
             currentTimeElement.textContent = formatTime(new Date());
-        }, 1000);
+            setInterval(() => {
+                const now = new Date();
+                currentTimeElement.textContent = formatTime(now);
+                // Also update tfl clock text - tflLastUpdatedElement.textContent = `Last updated: ${formatTime(now)}`;
+                // No, that's done in the update function
+            }, 1000);
+            
+            // Start the update loops
+            updateDepartureBoard();
+            setInterval(updateDepartureBoard, 30000); // Check every 30 seconds
+
+            // NEW: Start TfL updates
+            updateTflBoard();
+            setInterval(updateTflBoard, 30000); // Check TfL every 30 seconds
+        }
+        
+        startClocks();
 
     </script>
 
