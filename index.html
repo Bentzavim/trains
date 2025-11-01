@@ -318,10 +318,10 @@
                 const lineStatus = statusData[0]?.lineStatuses[0]?.statusSeverityDescription || "Unknown";
 
                 // Process Arrivals
-                // Sort by time to arrival and take the first 2
+                // Sort by time to arrival and take the first 1
                 const departures = arrivalsData
                     .sort((a, b) => a.timeToStation - b.timeToStation)
-                    .slice(0, 1) // UPDATED: Show 1, not 2
+                    .slice(0, 1) // UPDATED: Show 1
                     .map(arr => {
                         // Smarter destination logic
                         let dest = arr.destinationName || "Unknown";
@@ -583,8 +583,18 @@
                         const row = document.createElement('div');
                         row.className = "flex pb-2 border-b-2 border-gray-800 border-dashed";
                         
-                        // UPDATED: Show seconds, no "due" logic
-                        let dueText = `${train.secondsUntil} sec`;
+                        // UPDATED: Show mins/secs logic
+                        let dueText = "";
+                        const seconds = train.secondsUntil;
+
+                        if (seconds <= 30) {
+                            dueText = "Due";
+                        } else if (seconds < 120) { // Less than 2 minutes
+                            dueText = `${seconds} sec`;
+                        } else { // 120 seconds (2 mins) or more
+                            const minutes = Math.floor(seconds / 60);
+                            dueText = `${minutes} mins`;
+                        }
 
                         row.innerHTML = `
                             <span class="w-1/4">${train.platform}</span>
@@ -618,11 +628,11 @@
             
             // Start the update loops
             updateDepartureBoard();
-            setInterval(updateDepartureBoard, 30000); // Check every 30 seconds
+            setInterval(updateDepartureBoard, 5000); // Check every 5 seconds
 
             // NEW: Start TfL updates
             updateTflBoard();
-            setInterval(updateTflBoard, 30000); // Check TfL every 30 seconds
+            setInterval(updateTflBoard, 5000); // Check TfL every 5 seconds
         }
         
         startClocks();
