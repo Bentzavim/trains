@@ -164,7 +164,8 @@
                     const destination = service.destination && service.destination.length > 0 
                                       ? service.destination[0].locationName 
                                       : "Unknown";
-                    const operator = service.operatorName || "Unknown";
+                    // UPDATED: Check for operatorName, operator, or toc (Train Operating Company)
+                    const operator = service.operatorName || service.operator || service.toc || "Unknown";
                     
                     if (!scheduled) {
                          console.warn("Service missing scheduled time (std):", service);
@@ -276,7 +277,7 @@
                             time: MORNING_START_TIME, 
                             date: todayStr,
                             count: FALLBACK_TRAIN_COUNT, // Ask for 10
-                            noDestinationFilter: true // IMPORTANT: Tell function not to use destination
+                            noDestinationFilter: true // IMPORTANT: Tell function to not use destination
                         }
                     );
 
