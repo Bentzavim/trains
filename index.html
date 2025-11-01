@@ -177,7 +177,7 @@
         // --- END CONFIGURATION ---
 
         // --- REAL API FUNCTION (HUXLEY 2) ---
-        // Now accepts an optional options object { time, date, count, noDestinationFilter }
+        // This function remains the same, it works well.
         async function fetchRealTrainData(fromStation, toStation, count, options = {}) {
             
             // Use count from options if provided, otherwise default
@@ -269,34 +269,21 @@
             }
         }
         
-        // --- NEW: TFL API FUNCTION (SIMULATED) ---
-        // This is no longer used, we call fetchRealTflData
-        async function fetchTflData(lineId, stationId) {
-            // This is MOCK data because the real TfL API requires an API key.
-            // If you get a key, you can swap this function with the real one below.
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    const mockData = {
-                        lineStatus: "Good Service",
-                        departures: [
-                            { destination: "Stratford", secondsUntil: 120, platform: "2" },
-                            { destination: "Stratford", secondsUntil: 300, platform: "3" },
-                        ]
-                    };
-                    console.log("Using MOCK TfL Data:", mockData);
-                    resolve(mockData);
-                }, 500); // Simulate network delay
-            });
-        }
 
-        
-        // --- NEW: REAL TFL API FUNCTION ---
-        // This is now active
+        // --- UPDATED: REAL TFL API FUNCTION ---
+        // This is now active, using the official API + a new proxy
         async function fetchRealTflData(lineId, stationId) {
-            // Use a CORS proxy to bypass browser security
-            const proxy = "https://corsproxy.io/?";
-            const lineStatusUrl = `${proxy}https://api.tfl.gov.uk/Line/${lineId}/Status?app_key=${TFL_APP_KEY}`;
-            const arrivalsUrl = `${proxy}https://api.tfl.gov.uk/StopPoint/${stationId}/Arrivals?app_key=${TFL_APP_KEY}`;
+            // UPDATED: Switched to a new proxy: allorigins.win
+            // This proxy requires the URL to be URL-encoded.
+            const proxy = "https://api.allorigins.win/raw?url=";
+            
+            // Create the target URLs
+            const baseLineStatusUrl = `https://api.tfl.gov.uk/Line/${lineId}/Status?app_key=${TFL_APP_KEY}`;
+            const baseArrivalsUrl = `https://api.tfl.gov.uk/StopPoint/${stationId}/Arrivals?app_key=${TFL_APP_KEY}`;
+
+            // Create the final, proxied URLs
+            const lineStatusUrl = `${proxy}${encodeURIComponent(baseLineStatusUrl)}`;
+            const arrivalsUrl = `${proxy}${encodeURIComponent(baseArrivalsUrl)}`;
 
             try {
                 // Fetch line status and arrivals in parallel
@@ -308,7 +295,8 @@
                 if (!statusResponse.ok) throw new Error("Failed to fetch TfL line status");
                 if (!arrivalsResponse.ok) throw new Error("Failed to fetch TfL arrivals");
 
-                const statusData = await statusResponse.json();
+                // .json() is needed as allorigins returns raw text
+                const statusData = await statusResponse.json(); 
                 const arrivalsData = await arrivalsResponse.json();
                 
                 console.log("TfL Status:", statusData);
@@ -622,8 +610,6 @@
             setInterval(() => {
                 const now = new Date();
                 currentTimeElement.textContent = formatTime(now);
-                // Also update tfl clock text - tflLastUpdatedElement.textContent = `Last updated: ${formatTime(now)}`;
-                // No, that's done in the update function
             }, 1000);
             
             // Start the update loops
