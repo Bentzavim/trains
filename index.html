@@ -628,11 +628,13 @@
             
             // Start the update loops
             updateDepartureBoard();
-            setInterval(updateDepartureBoard, 5000); // Check every 5 seconds
+            // UPDATED: Set to 30 seconds
+            setInterval(updateDepartureBoard, 30000); // Check every 30 seconds
 
             // NEW: Start TfL updates
             updateTflBoard();
-            setInterval(updateTflBoard, 5000); // Check TfL every 5 seconds
+            // UPDATED: Set to 30 seconds
+            setInterval(updateTflBoard, 30000); // Check TfL every 30 seconds
         }
         
         startClocks();
